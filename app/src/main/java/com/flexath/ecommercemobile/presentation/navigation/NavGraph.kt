@@ -6,7 +6,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -19,13 +18,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.flexath.ecommercemobile.presentation.screens.detailScreen
 import com.flexath.ecommercemobile.presentation.screens.homeScreen
 import com.flexath.ecommercemobile.presentation.screens.splashScreen
-import com.flexath.ecommercemobile.presentation.viewmodels.MainViewModel
+import com.flexath.ecommercemobile.presentation.viewmodels.ProductViewModel
 import com.flexath.ecommercemobile.ui.theme.dimens
 
 @Composable
 fun SetUpNavGraph(
     modifier: Modifier = Modifier,
-    mainViewModel: MainViewModel,
+    productViewModel: ProductViewModel,
     startDestination: Screen,
     navController: NavHostController
 ) {
@@ -54,17 +53,18 @@ fun SetUpNavGraph(
             Log.i("NavGraph", "SetUpNavGraph: ${navBackStackEntry?.destination?.route}")
 
             splashScreen(
-                modifier = modifier,
+                modifier = modifier.navigationBarsPadding(),
                 dimens = dimens,
                 navController = navController
             )
 
             homeScreen(
                 modifier = modifier
-                    .statusBarsPadding(),
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
                 context = context,
                 dimens = dimens,
-                mainViewModel = mainViewModel,
+                productViewModel = productViewModel,
                 navController = navController
             )
 
@@ -72,7 +72,7 @@ fun SetUpNavGraph(
                 modifier = modifier.navigationBarsPadding(),
                 context = context,
                 dimens = dimens,
-                mainViewModel = mainViewModel,
+                productViewModel = productViewModel,
                 navController = navController
             )
         }

@@ -20,6 +20,7 @@ enum class AppColors {
     RENT_TAG_BACKGROUND_COLOR,
     LOADING_TRANSPARENT_BACKGROUND,
     ALERT_COLOR,
+    TRANSPARENT
 }
 
 //// Light Theme Colors
@@ -116,5 +117,6 @@ fun getAppColor(color: AppColors): Color {
         AppColors.RENT_TAG_TEXT_COLOR -> if(!isSystemInDarkTheme()) rentTagTextColorLightMode else rentTagTextColorDarkMode
         AppColors.LOADING_TRANSPARENT_BACKGROUND -> if(!isSystemInDarkTheme()) loadingTransparentBackgroundLightMode else loadingTransparentBackgroundDarkMode
         AppColors.ALERT_COLOR -> if(!isSystemInDarkTheme()) alertColorLightMode else alertColorDarkMode
+        AppColors.TRANSPARENT -> Color.Transparent
     }
 }

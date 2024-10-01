@@ -1,7 +1,6 @@
 package com.flexath.ecommercemobile.presentation.screens.components
 
 import android.content.Context
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,39 +17,55 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.flexath.currencyapp.ui.theme.AppColors
 import com.flexath.currencyapp.ui.theme.Dimensions
 import com.flexath.currencyapp.ui.theme.getAppColor
-import com.flexath.ecommercemobile.R
+import com.flexath.ecommercemobile.domain.model.ProductVO
 import com.flexath.ecommercemobile.ui.theme.dimens
 
 fun LazyListScope.productCardList(
     modifier: Modifier = Modifier,
     dimens: Dimensions,
     context: Context,
-    onNavigate: () -> Unit = {}
+    productList: List<ProductVO>,
+    onNavigate: (id: Int) -> Unit = {},
 ) {
-    items(count = 10) {
+    items(count = productList.size) { index ->
+        val product = productList[index]
         Spacer(modifier = Modifier.height(dimens.smallPadding4))
 
         ProductCard(
             modifier = modifier,
             dimens = dimens,
-            onNavigate = onNavigate
+            context = context,
+            product = product,
+            onNavigate = {
+                onNavigate(product.id)
+            }
         )
 
         Spacer(modifier = Modifier.height(dimens.smallPadding4))
@@ -61,8 +76,14 @@ fun LazyListScope.productCardList(
 fun ProductCard(
     modifier: Modifier = Modifier,
     dimens: Dimensions,
-    onNavigate: () -> Unit = {}
+    context: Context,
+    product: ProductVO,
+    onNavigate: () -> Unit = {},
 ) {
+    var isClickOnFavorite by rememberSaveable {
+        mutableStateOf(false)
+    }
+
     ElevatedCard(
         shape = RoundedCornerShape(MaterialTheme.dimens.mediumPadding3),
         elevation = CardDefaults.elevatedCardElevation(
@@ -79,10 +100,18 @@ fun ProductCard(
         Box(
             modifier = Modifier.background(getAppColor(AppColors.SEARCH_RESULT_BOX))
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.splash2),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(context).data(product.thumbnail.orEmpty())
+                    .crossfade(true)
+                    .build(),
+                contentDescription = product.title.orEmpty(),
+                contentScale = ContentScale.Fit,
+                loading = {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.scale(0.1f)
+                    )
+                },
                 modifier = Modifier.align(Alignment.Center).aspectRatio(16f/8f)
             )
 
@@ -94,8 +123,8 @@ fun ProductCard(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "$250",
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    text = "$${product.price}",
+                    style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
                     color = getAppColor(AppColors.TEXT_COLOR_PRIMARY),
@@ -105,9 +134,12 @@ fun ProductCard(
                 Spacer(modifier = Modifier.width(dimens.smallPadding4))
 
                 Icon(
-                    imageVector = Icons.Default.Favorite,
+                    imageVector = if(isClickOnFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                     contentDescription = null,
-                    tint = getAppColor(AppColors.COLOR_PRIMARY)
+                    tint = getAppColor(AppColors.COLOR_PRIMARY),
+                    modifier = Modifier.clickable {
+                        isClickOnFavorite = !isClickOnFavorite
+                    }
                 )
             }
 
@@ -119,10 +151,12 @@ fun ProductCard(
                     .fillMaxWidth()
             ) {
                 Text(
-                    text = "Product Name",
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    text = "${product.title}",
+                    style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = getAppColor(AppColors.TEXT_COLOR_PRIMARY),
                     modifier = Modifier.weight(1f)
                 )
@@ -156,6 +190,19 @@ fun ProductCard(
 private fun ProductCardPreview() {
     ProductCard(
         modifier = Modifier.fillMaxWidth(),
-        dimens = MaterialTheme.dimens
+        dimens = MaterialTheme.dimens,
+        context = LocalContext.current,
+        product = ProductVO(
+            id = 1,
+            title = "Product Name",
+            description = "Product Description",
+            price = 250,
+            rating = 0.7,
+            stock = 1,
+            brand = "Brand Name",
+            thumbnail = "https://i.dummyjson.com/data/products/1/thumbnail.jpg",
+            images = listOf(),
+            shippingInformation = ""
+        )
     )
 }

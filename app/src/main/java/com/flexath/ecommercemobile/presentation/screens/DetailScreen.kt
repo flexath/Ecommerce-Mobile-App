@@ -1,15 +1,16 @@
 package com.flexath.ecommercemobile.presentation.screens
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,9 +34,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,26 +46,33 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.flexath.currencyapp.ui.theme.AppColors
 import com.flexath.currencyapp.ui.theme.Dimensions
 import com.flexath.currencyapp.ui.theme.getAppColor
@@ -74,9 +84,11 @@ import com.flexath.ecommercemobile.presentation.extensions.enterPush
 import com.flexath.ecommercemobile.presentation.extensions.exitPop
 import com.flexath.ecommercemobile.presentation.extensions.exitPush
 import com.flexath.ecommercemobile.presentation.navigation.Screen
+import com.flexath.ecommercemobile.presentation.screens.components.AddToCardDialog
 import com.flexath.ecommercemobile.presentation.screens.components.CustomFilledButton
-import com.flexath.ecommercemobile.presentation.screens.components.ScrollablePageIndicator
-import com.flexath.ecommercemobile.presentation.viewmodels.MainViewModel
+import com.flexath.ecommercemobile.presentation.screens.components.PageIndicator
+import com.flexath.ecommercemobile.presentation.states.ProductState
+import com.flexath.ecommercemobile.presentation.viewmodels.ProductViewModel
 import com.flexath.ecommercemobile.ui.theme.dimens
 import kotlinx.coroutines.launch
 
@@ -84,7 +96,7 @@ fun NavGraphBuilder.detailScreen(
     modifier: Modifier = Modifier,
     context: Context,
     dimens: Dimensions,
-    mainViewModel: MainViewModel,
+    productViewModel: ProductViewModel,
     navController: NavHostController
 ) {
     composable<Screen.Detail>(
@@ -96,21 +108,58 @@ fun NavGraphBuilder.detailScreen(
         val navArgs = it.toRoute<Screen.Detail>()
         val productId = navArgs.productId
 
-        DetailScreen(
-            modifier = modifier,
-            dimens = dimens,
-            context = context,
-            productId = productId,
-            onClickBackButton = {
-                navController.popBackStack()
-            },
-            onClickFavoriteButton = {
+        LaunchedEffect(key1 = productId) {
+            productViewModel.getProduct(productId)
+        }
 
-            },
-            onNavigate = {
-                navController.popBackStack()
+        val productState = productViewModel.productState.collectAsStateWithLifecycle()
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            DetailScreen(
+                modifier = modifier,
+                dimens = dimens,
+                context = context,
+                productState = productState.value,
+                onClickBackButton = {
+                    navController.popBackStack()
+                },
+                onClickFavoriteButton = {
+
+                },
+                onNavigate = {
+                    navController.popBackStack()
+                }
+            )
+
+            // Loading overlay
+            if (productState.value.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.3f))
+                        .clickable {},
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        strokeWidth = dimens.smallPadding1
+                    )
+                }
+            } else if (productState.value.isError) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.3f))
+                        .clickable {
+
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        strokeWidth = dimens.smallPadding1
+                    )
+                }
             }
-        )
+        }
     }
 }
 
@@ -119,13 +168,13 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
     dimens: Dimensions,
     context: Context,
-    productId: Int = 0,
+    productState: ProductState,
     onClickBackButton: () -> Unit = {},
     onClickFavoriteButton: () -> Unit = {},
     onNavigate: () -> Unit = {}
 ) {
     val pagerState = rememberPagerState(initialPage = 0) {
-        3 ?: 0
+        productState.product?.images?.size ?: 0
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -141,6 +190,10 @@ fun DetailScreen(
     var quantity by rememberSaveable {
         mutableStateOf(0)
     }
+    
+    var currentColor by remember {
+        mutableStateOf(Color(0xFFFF7743))
+    }
 
     var descriptionVisibility by rememberSaveable {
         mutableStateOf(false)
@@ -149,6 +202,34 @@ fun DetailScreen(
     var freeDeliveryVisibility by rememberSaveable {
         mutableStateOf(false)
     }
+
+    var isClickOnFavorite by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    var showDialog by remember {
+        mutableStateOf(false)
+    }
+
+    /** These input values to this dialog should be from view model,
+    not from screen ( Cannot do further more due to time constraint
+    and due to electricity will cut off at 9am ) **/
+    AddToCardDialog(
+        modifier = Modifier,
+        dimens = dimens,
+        showDialog = showDialog,
+        product = productState.product ?: return,
+        size = productSizes[selectedSizeIndex],
+        color = productColors[selectedColorIndex],
+        quantity = quantity,
+        onDismiss = {
+            showDialog = it
+        },
+        onNavigate = { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            onNavigate()
+        }
+    )
 
     Scaffold(
         modifier = modifier,
@@ -164,9 +245,10 @@ fun DetailScreen(
                         .fillMaxWidth()
                         .padding(dimens.mediumPadding3),
                     dimens = dimens,
-                    buttonText = "Add to Card",
+                    containerColor = currentColor,
+                    buttonText = stringResource(R.string.lbl_add_to_card),
                     onClick = {
-
+                        showDialog = true
                     }
                 )
             }
@@ -178,37 +260,33 @@ fun DetailScreen(
             modifier = Modifier.padding(bottom = bottomPadding)
         ) {
             item {
-                Box {
-                    HorizontalPager(state = pagerState) { page ->
-//                        SubcomposeAsyncImage(
-//                            model = ImageRequest.Builder(context)
-//                                .crossfade(true)
-//                                .placeholder(R.drawable.img_hl_default_landscape)
-//                                .data(currentPhoto.medium).build(),
-//                            contentDescription = "Post Image",
-//                            loading = {
-//                                CircularProgressIndicator(
-//                                    color = getAppColor(color = AppColors.COLOR_PRIMARY),
-//                                    strokeWidth = dimens.smallPadding4,
-//                                    modifier = Modifier.scale(0.1f)
-//                                )
-//                            },
-//                            contentScale = ContentScale.Crop,
-//                            modifier = Modifier
-//                                .aspectRatio(376f / 348f)
-//                                .clickable {
-//                                    onClickImage(page)
-//                                }
-//                        )
-
-                        Image(
-                            painter = painterResource(id = R.drawable.splash2),
-                            contentDescription = null,
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(376f / 348f)
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxWidth()
+                    ) { page ->
+                        val photo = productState.product?.images?.get(page)
+                        SubcomposeAsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .crossfade(true)
+                                .data(photo.orEmpty()).build(),
+                            contentDescription = "Product Image",
+                            loading = {
+                                CircularProgressIndicator(
+                                    color = getAppColor(color = AppColors.COLOR_PRIMARY),
+                                    strokeWidth = dimens.smallPadding4,
+                                    modifier = Modifier.scale(0.1f)
+                                )
+                            },
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .aspectRatio(376f / 348f)
+                                .nestedScroll(rememberNestedScrollInteropConnection())
                         )
-
                     }
 
                     Surface(
@@ -240,6 +318,7 @@ fun DetailScreen(
                         color = getAppColor(color = AppColors.COLOR_BACKGROUND),
                         shadowElevation = dimens.smallPadding4,
                         onClick = {
+                            isClickOnFavorite = !isClickOnFavorite
                             onClickFavoriteButton()
                         },
                         modifier = Modifier
@@ -250,27 +329,29 @@ fun DetailScreen(
                             )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Favorite,
+                            imageVector = if(isClickOnFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "Favorite Button",
-                            tint = getAppColor(color = AppColors.COLOR_PRIMARY),
+                            tint = currentColor,
                             modifier = Modifier.padding(dimens.smallPadding4)
                         )
                     }
-
-                    ScrollablePageIndicator(
-                        dimens = dimens,
-                        pageSize = 3,
-                        selectedPage = pagerState.currentPage,
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .width(dimens.extraLargePadding5_2x + dimens.mediumPadding3)
-                            .padding(dimens.mediumPadding1),
-                        onClickDot = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(it)
+                    
+                    if((productState.product?.images?.size ?: 0) > 1) {
+                        PageIndicator(
+                            dimens = dimens,
+                            pageSize = productState.product?.images?.size ?: 0,
+                            selectedPage = pagerState.currentPage,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .width(dimens.extraLargePadding5_2x + dimens.mediumPadding3)
+                                .padding(dimens.mediumPadding1),
+                            onClickDot = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(it)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(dimens.mediumPadding3))
@@ -282,7 +363,7 @@ fun DetailScreen(
                         .padding(horizontal = dimens.mediumPadding3)
                 ) {
                     Text(
-                        text = "Men's shoes",
+                        text = productState.product?.brand.orEmpty(),
                         style = MaterialTheme.typography.titleSmall,
                         color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
                         modifier = Modifier.weight(1f)
@@ -296,13 +377,13 @@ fun DetailScreen(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = null,
-                            tint = getAppColor(color = AppColors.COLOR_PRIMARY),
+                            tint = currentColor,
                         )
 
                         Spacer(modifier = Modifier.width(dimens.smallPadding1))
 
                         Text(
-                            text = "4.7",
+                            text = (productState.product?.rating ?: 0.0).toString(),
                             style = MaterialTheme.typography.titleSmall,
                             color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
                         )
@@ -318,7 +399,7 @@ fun DetailScreen(
                         .padding(horizontal = dimens.mediumPadding3)
                 ) {
                     Text(
-                        text = "Nike Air Max 27",
+                        text = productState.product?.title.orEmpty(),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -329,8 +410,8 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(dimens.smallPadding4))
 
                     Text(
-                        text = "$290",
-                        style = MaterialTheme.typography.titleSmall.copy(
+                        text = "$${productState.product?.price ?: 0}",
+                        style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
                         color = getAppColor(color = AppColors.TEXT_COLOR_PRIMARY),
@@ -389,6 +470,7 @@ fun DetailScreen(
                                         selectedSizeIndex = index
                                     }
                                 ),
+                            selectedColor = currentColor,
                             isSelected = selectedSizeIndex == index,
                             context = context,
                             size = productSize,
@@ -407,6 +489,9 @@ fun DetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable {
+                            descriptionVisibility = !descriptionVisibility
+                        }
                         .padding(horizontal = dimens.mediumPadding3)
                 ) {
                     Text(
@@ -433,16 +518,13 @@ fun DetailScreen(
                 AnimatedVisibility(
                     visible = descriptionVisibility,
                     enter = fadeIn(
-                        animationSpec = tween(200)
-                    ),
-                    exit = fadeOut(
-                        animationSpec = tween(200)
+                        animationSpec = tween(300)
                     )
                 ) {
                     Spacer(modifier = Modifier.height(dimens.mediumPadding1))
 
                     Text(
-                        text = "The Eyeshadow Palette with Mirror offers a versatile range of eyeshadow shades for creating stunning eye looks. With a built-in mirror, it's convenient for on-the-go makeup application.",
+                        text = productState.product?.description.orEmpty(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
                         modifier = Modifier
@@ -461,12 +543,15 @@ fun DetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable {
+                            freeDeliveryVisibility = !freeDeliveryVisibility
+                        }
                         .padding(horizontal = dimens.mediumPadding3)
                 ) {
                     Text(
-                        text = stringResource(R.string.lbl_free_delivery_and_returns),
+                        text = stringResource(R.string.lbl_other_information),
                         style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Medium
                         ),
                         color = getAppColor(color = AppColors.TEXT_COLOR_PRIMARY),
                         modifier = Modifier.weight(1f)
@@ -488,21 +573,42 @@ fun DetailScreen(
                     visible = freeDeliveryVisibility,
                     enter = fadeIn(
                         animationSpec = tween(200)
-                    ),
-                    exit = fadeOut(
-                        animationSpec = tween(200)
                     )
                 ) {
                     Spacer(modifier = Modifier.height(dimens.mediumPadding1))
 
-                    Text(
-                        text = "The Eyeshadow Palette with Mirror offers a versatile range of eyeshadow shades for creating stunning eye looks. With a built-in mirror, it's convenient for on-the-go makeup application.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = dimens.mediumPadding3)
-                    )
+                    Column {
+                        Text(
+                            text = "Status - ${productState.product?.availabilityStatus}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimens.mediumPadding3)
+                        )
+
+                        Spacer(modifier = Modifier.height(dimens.smallPadding4))
+
+                        Text(
+                            text = "Shipping Information - ${productState.product?.shippingInformation}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimens.mediumPadding3)
+                        )
+
+                        Spacer(modifier = Modifier.height(dimens.smallPadding4))
+
+                        Text(
+                            text = "Warranty Information - ${productState.product?.warrantyInformation}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = getAppColor(color = AppColors.TEXT_COLOR_SECONDARY),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = dimens.mediumPadding3)
+                        )
+                    }
                 }
 
                 HorizontalDivider(
@@ -517,7 +623,7 @@ fun DetailScreen(
                         .selectableGroup()
                 ) {
                     items(productColors.size) { index ->
-                        val color = productColors[index]
+                        val productColor = productColors[index]
                         if (index == 0) {
                             Spacer(modifier = Modifier.width(dimens.smallPadding4))
                         }
@@ -529,12 +635,13 @@ fun DetailScreen(
                                 .selectable(
                                     selected = selectedColorIndex == index,
                                     onClick = {
+                                        currentColor = productColor.color
                                         selectedColorIndex = index
                                     }
                                 ),
                             dimens = dimens,
                             isSelected = selectedColorIndex == index,
-                            color = color
+                            color = productColor.color
                         )
 
                         if (index == 9) {
@@ -620,7 +727,7 @@ fun DetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(dimens.smallPadding4))
+                Spacer(modifier = Modifier.height(dimens.mediumPadding3))
             }
 
         }
@@ -633,13 +740,14 @@ fun SizeCard(
     context: Context,
     dimens: Dimensions,
     size: Double,
+    selectedColor: Color = getAppColor(AppColors.COLOR_PRIMARY),
     isSelected: Boolean = false
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(dimens.smallPadding4))
             .background(
-                color = if (isSelected) getAppColor(color = AppColors.COLOR_PRIMARY)
+                color = if (isSelected) selectedColor
                 else getAppColor(color = AppColors.SEARCH_RESULT_BOX)
             ),
         contentAlignment = Alignment.Center,
@@ -690,7 +798,8 @@ private fun DetailScreenPreview() {
             .fillMaxSize()
             .navigationBarsPadding(),
         dimens = MaterialTheme.dimens,
-        context = LocalContext.current
+        context = LocalContext.current,
+        productState = ProductState()
     )
 
 }

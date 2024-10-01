@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import com.flexath.currencyapp.ui.theme.AppColors
@@ -26,6 +27,7 @@ fun CustomFilledButton(
     dimens: Dimensions,
     buttonText: String,
     onClick: () -> Unit,
+    containerColor: Color = getAppColor(AppColors.COLOR_PRIMARY),
     isLoading: Boolean = false
 ) {
     Button(
@@ -33,7 +35,7 @@ fun CustomFilledButton(
         shape = RoundedCornerShape(dimens.mediumPadding1),
         enabled = !isLoading,
         colors = ButtonDefaults.buttonColors(
-            containerColor = getAppColor(AppColors.COLOR_PRIMARY),
+            containerColor = containerColor,
             contentColor = getAppColor(AppColors.TEXT_COLOR_PRIMARY)
         ),
         onClick = {

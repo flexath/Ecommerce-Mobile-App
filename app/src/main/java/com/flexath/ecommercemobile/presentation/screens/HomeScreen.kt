@@ -20,15 +20,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -44,21 +46,24 @@ import com.flexath.currencyapp.ui.theme.AppColors
 import com.flexath.currencyapp.ui.theme.Dimensions
 import com.flexath.currencyapp.ui.theme.getAppColor
 import com.flexath.ecommercemobile.R
+import com.flexath.ecommercemobile.presentation.constants.categoryList
 import com.flexath.ecommercemobile.presentation.extensions.enterPop
 import com.flexath.ecommercemobile.presentation.extensions.exitPop
 import com.flexath.ecommercemobile.presentation.extensions.exitPush
 import com.flexath.ecommercemobile.presentation.navigation.Screen
 import com.flexath.ecommercemobile.presentation.screens.components.CategoryCard
+import com.flexath.ecommercemobile.presentation.screens.components.ProductCardShimmerEffect
 import com.flexath.ecommercemobile.presentation.screens.components.SearchBasicTextField
 import com.flexath.ecommercemobile.presentation.screens.components.productCardList
-import com.flexath.ecommercemobile.presentation.viewmodels.MainViewModel
+import com.flexath.ecommercemobile.presentation.states.ProductListState
+import com.flexath.ecommercemobile.presentation.viewmodels.ProductViewModel
 import com.flexath.ecommercemobile.ui.theme.dimens
 
 fun NavGraphBuilder.homeScreen(
     modifier: Modifier = Modifier,
     context: Context,
     dimens: Dimensions,
-    mainViewModel: MainViewModel,
+    productViewModel: ProductViewModel,
     navController: NavHostController
 ) {
     composable<Screen.Home>(
@@ -66,14 +71,28 @@ fun NavGraphBuilder.homeScreen(
         popEnterTransition = enterPop,
         popExitTransition = exitPop
     ) {
+
+        val isFetched = productViewModel.isProductListFetched.collectAsStateWithLifecycle()
+
+        LaunchedEffect(key1 = isFetched.value) {
+            if(!isFetched.value) {
+                productViewModel.getAllProducts(
+                    limit = null
+                )
+            }
+        }
+
+        val productListState = productViewModel.productListState.collectAsStateWithLifecycle()
+
         HomeScreen(
             modifier = modifier,
             dimens = dimens,
             context = context,
+            productListState = productListState.value,
             onNavigate = {
                 navController.navigate(
                     Screen.Detail(
-                        productId = 1
+                        productId = it
                     )
                 )
             }
@@ -87,7 +106,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     dimens: Dimensions,
     context: Context,
-    onNavigate: () -> Unit = {},
+    productListState: ProductListState,
+    onNavigate: (id: Int) -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
         snapAnimationSpec = tween(200)
@@ -98,14 +118,14 @@ fun HomeScreen(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = getAppColor(AppColors.COLOR_BACKGROUND),
                     scrolledContainerColor = getAppColor(AppColors.COLOR_BACKGROUND)
                 ),
                 title = {
-                    Text(text = "Home")
+
                 },
                 navigationIcon = {
                     IconButton(
@@ -161,7 +181,8 @@ fun HomeScreen(
                 LazyRow(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(count = 10) { index ->
+                    items(count = categoryList.size) { index ->
+                        val category = categoryList[index]
 
                         if(index == 0) {
                             Spacer(modifier = Modifier.width(dimens.smallPadding4))
@@ -170,7 +191,8 @@ fun HomeScreen(
                         CategoryCard(
                             modifier = Modifier.padding(horizontal = dimens.smallPadding4),
                             context = context,
-                            dimens = dimens
+                            dimens = dimens,
+                            category = category
                         )
 
                         if(index == 9) {
@@ -199,7 +221,6 @@ fun HomeScreen(
                     Icon(
                         imageVector = Icons.Default.FilterList,
                         contentDescription = null,
-                        tint = getAppColor(AppColors.TEXT_COLOR_PRIMARY),
                         modifier = Modifier
                             .clip(CircleShape)
                             .border(
@@ -207,21 +228,32 @@ fun HomeScreen(
                                 getAppColor(AppColors.STROKE_COLOR),
                                 CircleShape
                             )
-                            .padding(dimens.smallPadding2)
                             .clickable {
 
                             }
+                            .padding(dimens.smallPadding2),
+                        tint = getAppColor(AppColors.TEXT_COLOR_PRIMARY)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(dimens.smallPadding4))
+
+                if(productListState.isLoading) {
+                    ProductCardShimmerEffect(
+                        modifier = Modifier.fillMaxWidth(),
+                        dimens = dimens
+                    )
+                }
             }
 
             productCardList(
                 modifier = Modifier.padding(horizontal = dimens.mediumPadding3).fillMaxWidth(),
                 dimens = dimens,
                 context = context,
-                onNavigate = onNavigate
+                productList = productListState.productList,
+                onNavigate = {
+                    onNavigate(it)
+                }
             )
         }
     }
@@ -233,7 +265,8 @@ private fun HomeScreenPreview() {
     HomeScreen(
         modifier = Modifier.fillMaxSize(),
         dimens = MaterialTheme.dimens,
-        context = LocalContext.current
+        context = LocalContext.current,
+        productListState = ProductListState()
     )
 
 }

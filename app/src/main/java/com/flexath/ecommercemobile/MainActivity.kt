@@ -5,8 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,7 +14,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import com.flexath.ecommercemobile.presentation.navigation.Screen
 import com.flexath.ecommercemobile.presentation.navigation.SetUpNavGraph
-import com.flexath.ecommercemobile.presentation.viewmodels.MainViewModel
+import com.flexath.ecommercemobile.presentation.viewmodels.ProductViewModel
 import com.flexath.ecommercemobile.ui.theme.EcommerceMobileTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -27,12 +26,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             EcommerceMobileTheme {
                 val navController = rememberNavController()
-                val mainViewModel = hiltViewModel<MainViewModel>()
+                val productViewModel = hiltViewModel<ProductViewModel>()
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                Surface {
                     SetUpNavGraph(
                         modifier = Modifier.fillMaxSize(),
-                        mainViewModel = mainViewModel,
+                        productViewModel = productViewModel,
                         startDestination = Screen.Splash,
                         navController = navController
                     )

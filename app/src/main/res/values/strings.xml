@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">EcommerceMobile</string>
     <string name="lbl_popular">Popular</string>
-    <string name="lbl_free_delivery_and_returns">Free Delivery and Returns</string>
+    <string name="lbl_other_information">Other information</string>
     <string name="lbl_description">Description</string>
+    <string name="lbl_add_to_card">Add to Card</string>
 </resources>
