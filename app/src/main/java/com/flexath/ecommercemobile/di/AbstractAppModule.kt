@@ -1,5 +1,6 @@
 package com.flexath.ecommercemobile.di
 
+import com.flexath.ecommercemobile.data.repository.ProductKtorRepositoryImpl
 import com.flexath.ecommercemobile.data.repository.ProductRepositoryImpl
 import com.flexath.ecommercemobile.domain.repository.ProductRepository
 import dagger.Binds
@@ -10,6 +11,9 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class AbstractAppModule {
+//    @Binds
+//    abstract fun provideProductRepository(repositoryImpl: ProductRepositoryImpl): ProductRepository
+
     @Binds
-    abstract fun provideProductRepository(repositoryImpl: ProductRepositoryImpl): ProductRepository
+    abstract fun provideProductKtorRepository(repositoryImpl: ProductKtorRepositoryImpl): ProductRepository
 }

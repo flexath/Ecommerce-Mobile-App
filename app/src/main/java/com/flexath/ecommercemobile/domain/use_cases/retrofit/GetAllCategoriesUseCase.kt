@@ -1,4 +1,4 @@
-package com.flexath.ecommercemobile.domain.use_cases
+package com.flexath.ecommercemobile.domain.use_cases.retrofit
 
 import com.flexath.ecommercemobile.data.Resource
 import com.flexath.ecommercemobile.domain.repository.ProductRepository

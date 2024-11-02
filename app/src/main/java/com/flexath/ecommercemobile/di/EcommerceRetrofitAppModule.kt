@@ -15,7 +15,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object EcommerceAppModule {
+object EcommerceRetrofitAppModule {
 
     @Provides
     fun provideOkHttpClient() : OkHttpClient {

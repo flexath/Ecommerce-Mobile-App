@@ -1,4 +1,4 @@
-package com.flexath.ecommercemobile.domain.use_cases
+package com.flexath.ecommercemobile.domain.use_cases.retrofit
 
 import com.flexath.ecommercemobile.data.Resource
 import com.flexath.ecommercemobile.domain.repository.ProductRepository
@@ -6,12 +6,12 @@ import com.flexath.ecommercemobile.domain.model.ProductVO
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetAllProductUseCase @Inject constructor(
+class GetAllProductOfCategoryUseCase @Inject constructor(
     private val productRepository: ProductRepository
 ) {
     operator fun invoke(
-        limit: Int?
+        categoryName: String
     ): Flow<Resource<List<ProductVO>>> {
-        return productRepository.getAllProducts(limit)
+        return productRepository.getProductsOfCategory(categoryName)
     }
 }

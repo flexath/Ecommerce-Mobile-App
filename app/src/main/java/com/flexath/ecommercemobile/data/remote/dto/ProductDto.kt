@@ -2,7 +2,9 @@ package com.flexath.ecommercemobile.data.remote.dto
 
 import com.flexath.ecommercemobile.domain.model.ProductVO
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ProductDto(
     @SerializedName("brand")
     val brand: String?,

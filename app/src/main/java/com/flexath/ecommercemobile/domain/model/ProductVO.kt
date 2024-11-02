@@ -1,5 +1,8 @@
 package com.flexath.ecommercemobile.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class ProductVO(
     val id: Int = 0,
     val title: String?,

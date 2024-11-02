@@ -2,7 +2,9 @@ package com.flexath.ecommercemobile.data.remote.dto
 
 import com.flexath.ecommercemobile.domain.model.ProductListResponse
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ProductListResponseDto(
     @SerializedName("limit")
     val limit: Int?,
