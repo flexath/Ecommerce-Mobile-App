@@ -24,6 +24,9 @@ coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
+ktorClientAndroidVersion = "1.5.0"
+ktorClientLoggingJvm = "1.5.0"
+ktorClientSerialization = "1.5.0"
 lifecycleRuntimeCompose = "2.6.0"
 lifecycleRuntimeKtx = "2.6.0"
 lifecycleLivedataKtx = "2.6.0"
@@ -118,6 +121,9 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-logging-jvm = { module = "io.ktor:ktor-client-logging-jvm", version.ref = "ktorClientLoggingJvm" }
+ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktorClientSerialization" }
+ktor-ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktorClientAndroidVersion" }
 logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptor" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
@@ -147,3 +153,10 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 googleGmsGoogleServices = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }
+
+[bundles]
+ktorBundle = [
+    "ktor-ktor-client-android",
+    "ktor-client-serialization",
+    "ktor-client-logging-jvm"
+]

@@ -142,6 +142,9 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.okhttp)
 
+    //ktor client, serialization and logging
+    implementation(libs.bundles.ktorBundle)
+
     // Logging Interceptor
     implementation(libs.logging.interceptor)
 
